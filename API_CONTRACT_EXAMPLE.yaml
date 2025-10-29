@@ -1,0 +1,649 @@
+openapi: 3.0.0
+info:
+  title: Glow Track API
+  description: API for patient-centric aesthetic treatment tracking system
+  version: 1.0.0
+  contact:
+    email: api@glowtrack.com
+
+servers:
+  - url: https://api.glowtrack.com/v1
+    description: Production server
+  - url: https://staging-api.glowtrack.com/v1
+    description: Staging server
+
+tags:
+  - name: Authentication
+    description: User authentication operations
+  - name: Patients
+    description: Patient management
+  - name: Professionals
+    description: Professional management
+  - name: Centers
+    description: Medical center management
+  - name: Entries
+    description: Treatment/intervention entries
+  - name: Authorizations
+    description: Temporary access authorizations
+  - name: Audit
+    description: Audit logs
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ========================================
+  # Authentication
+  # ========================================
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/AuthUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: User registration
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/AuthUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+
+  # ========================================
+  # Patients
+  # ========================================
+  /patients/{patientId}:
+    get:
+      tags:
+        - Patients
+      summary: Get patient profile
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: Patient profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{patientId}/entries:
+    get:
+      tags:
+        - Patients
+      summary: Get patient entries
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: type
+          schema:
+            $ref: '#/components/schemas/EntryType'
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/EntryStatus'
+      responses:
+        '200':
+          description: List of entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+
+  /patients/{patientId}/authorizations:
+    get:
+      tags:
+        - Authorizations
+      summary: Get patient authorizations
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: List of authorizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Authorization'
+
+    post:
+      tags:
+        - Authorizations
+      summary: Create new authorization
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuthorizationRequest'
+      responses:
+        '201':
+          description: Authorization created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Authorization'
+
+  # ========================================
+  # Entries
+  # ========================================
+  /entries:
+    post:
+      tags:
+        - Entries
+      summary: Create new entry
+      description: Requires X-Grant-Id header with valid authorization token
+      parameters:
+        - $ref: '#/components/parameters/GrantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntryRequest'
+      responses:
+        '201':
+          description: Entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /entries/{entryId}:
+    get:
+      tags:
+        - Entries
+      summary: Get entry details
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '200':
+          description: Entry details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+
+  # ========================================
+  # Authorizations
+  # ========================================
+  /authorizations/validate:
+    post:
+      tags:
+        - Authorizations
+      summary: Validate authorization token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                twoFactorCode:
+                  type: string
+      responses:
+        '200':
+          description: Authorization valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  authorization:
+                    $ref: '#/components/schemas/Authorization'
+                  patient:
+                    $ref: '#/components/schemas/Patient'
+
+  /authorizations/{authId}/revoke:
+    post:
+      tags:
+        - Authorizations
+      summary: Revoke authorization
+      parameters:
+        - name: authId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authorization revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Authorization'
+
+# ========================================
+# Components
+# ========================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PatientId:
+      name: patientId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    EntryId:
+      name: entryId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    GrantId:
+      name: X-Grant-Id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Authorization grant token
+
+  schemas:
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [PATIENT, PROFESSIONAL, CENTER_ADMIN]
+        profile:
+          oneOf:
+            - $ref: '#/components/schemas/Patient'
+            - $ref: '#/components/schemas/Professional'
+
+    Patient:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        phoneNumber:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Professional:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        specialty:
+          type: string
+        licenseNumber:
+          type: string
+        licenseAuthority:
+          type: string
+        centerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Entry:
+      type: object
+      properties:
+        id:
+          type: string
+        patientId:
+          type: string
+        type:
+          $ref: '#/components/schemas/EntryType'
+        status:
+          $ref: '#/components/schemas/EntryStatus'
+        title:
+          type: string
+        description:
+          type: string
+        scheduledDate:
+          type: string
+          format: date-time
+        completedDate:
+          type: string
+          format: date-time
+        professionalId:
+          type: string
+        centerId:
+          type: string
+        medications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Medication'
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+        createdAt:
+          type: string
+          format: date-time
+
+    Medication:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        dose:
+          type: string
+        unit:
+          type: string
+        batchNumber:
+          type: string
+        administrationRoute:
+          type: string
+
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        manufacturer:
+          type: string
+        model:
+          type: string
+
+    Authorization:
+      type: object
+      properties:
+        id:
+          type: string
+        patientId:
+          type: string
+        type:
+          type: string
+          enum: [QR_CODE, LINK]
+        status:
+          type: string
+          enum: [PENDING, ACTIVE, USED, EXPIRED, REVOKED]
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        maxUses:
+          type: integer
+        usedCount:
+          type: integer
+        requires2FA:
+          type: boolean
+        twoFactorCode:
+          type: string
+        permissions:
+          $ref: '#/components/schemas/AuthorizationPermissions'
+        createdAt:
+          type: string
+          format: date-time
+
+    AuthorizationPermissions:
+      type: object
+      properties:
+        canCreateEntry:
+          type: boolean
+        canViewHistory:
+          type: boolean
+        canUploadPhotos:
+          type: boolean
+        entryTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntryType'
+
+    EntryType:
+      type: string
+      enum: [TREATMENT, INTERVENTION, SURGERY]
+
+    EntryStatus:
+      type: string
+      enum: [SCHEDULED, COMPLETED, IN_PROGRESS, CANCELLED]
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - role
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [PATIENT, PROFESSIONAL]
+        dateOfBirth:
+          type: string
+          format: date
+        specialty:
+          type: string
+        licenseNumber:
+          type: string
+
+    CreateEntryRequest:
+      type: object
+      required:
+        - type
+        - title
+        - description
+        - scheduledDate
+        - professionalId
+        - centerId
+      properties:
+        type:
+          $ref: '#/components/schemas/EntryType'
+        title:
+          type: string
+        description:
+          type: string
+        scheduledDate:
+          type: string
+          format: date-time
+        professionalId:
+          type: string
+        centerId:
+          type: string
+        notes:
+          type: string
+
+    CreateAuthorizationRequest:
+      type: object
+      required:
+        - type
+        - expiresInHours
+        - maxUses
+        - permissions
+      properties:
+        type:
+          type: string
+          enum: [QR_CODE, LINK]
+        expiresInHours:
+          type: integer
+        maxUses:
+          type: integer
+        requires2FA:
+          type: boolean
+        permissions:
+          $ref: '#/components/schemas/AuthorizationPermissions'
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
