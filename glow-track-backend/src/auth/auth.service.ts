@@ -43,7 +43,7 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(
       registerDto.password,
-      parseInt(process.env.BCRYPT_ROUNDS) || 10,
+      parseInt(process.env.BCRYPT_ROUNDS || '10'),
     );
 
     let user: User;
@@ -187,12 +187,16 @@ export class AuthService {
 
     // Get specific profile based on role
     if (user.role === UserRole.PATIENT) {
-      return await this.patientsRepository.findOne({ where: { id: userId } });
+      const patient = await this.patientsRepository.findOne({ where: { id: userId } });
+      if (!patient) throw new UnauthorizedException('Patient profile not found');
+      return patient;
     } else if (user.role === UserRole.PROFESSIONAL) {
-      return await this.professionalsRepository.findOne({
+      const professional = await this.professionalsRepository.findOne({
         where: { id: userId },
         relations: ['center'],
       });
+      if (!professional) throw new UnauthorizedException('Professional profile not found');
+      return professional;
     }
 
     return user;
@@ -224,7 +228,7 @@ export class AuthService {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
 
     if (user) {
-      user.refreshToken = null;
+      user.refreshToken = undefined;
       await this.usersRepository.save(user);
 
       // Audit logout

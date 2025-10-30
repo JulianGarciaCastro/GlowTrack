@@ -254,7 +254,7 @@ export class AuthorizationsService {
   }
 
   private generateTwoFactorCode(): string {
-    const length = parseInt(process.env.TWO_FACTOR_CODE_LENGTH) || 6;
+    const length = parseInt(process.env.TWO_FACTOR_CODE_LENGTH || '6');
     const min = Math.pow(10, length - 1);
     const max = Math.pow(10, length) - 1;
     return Math.floor(Math.random() * (max - min + 1) + min).toString();
