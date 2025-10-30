@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Glow Track",
+    "slug": "glow-track",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.glowtrack.app"
+    },
+    "android": {
+      "package": "com.glowtrack.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-barcode-scanner",
+        {
+          "cameraPermission": "Allow Glow Track to access camera for QR scanning"
+        }
+      ]
+    ],
+    "scheme": "glowtrack",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
+  }
+}
