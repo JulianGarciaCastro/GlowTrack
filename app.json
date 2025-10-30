@@ -4,35 +4,16 @@
     "slug": "glow-track",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.glowtrack.app",
-      "infoPlist": {
-        "NSCameraUsageDescription": "This app uses the camera to scan QR codes for secure authorization.",
-        "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication."
-      }
+      "bundleIdentifier": "com.glowtrack.app"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.glowtrack.app",
-      "permissions": [
-        "CAMERA",
-        "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
-      ]
+      "package": "com.glowtrack.app"
     },
     "web": {
       "bundler": "metro"
