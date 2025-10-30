@@ -31,7 +31,7 @@ export class Device {
   @Column({ name: 'serial_number', nullable: true })
   serialNumber?: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   settings?: {
     power?: string;
     frequency?: string;

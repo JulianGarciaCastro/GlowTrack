@@ -70,7 +70,7 @@ export class Authorization {
   @Column({ name: 'two_factor_verified_at', type: 'timestamp', nullable: true })
   twoFactorVerifiedAt?: Date;
 
-  @Column({ type: 'jsonb' })
+  @Column({ type: 'json' })
   permissions: {
     canCreateEntry: boolean;
     canViewHistory: boolean;

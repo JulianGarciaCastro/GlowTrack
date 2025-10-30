@@ -75,10 +75,10 @@ export class Entry {
   @Column({ name: 'follow_up_date', type: 'timestamp', nullable: true })
   followUpDate?: Date;
 
-  @Column({ name: 'before_photos', type: 'text', array: true, nullable: true })
+  @Column({ name: 'before_photos', type: 'json', nullable: true })
   beforePhotos?: string[];
 
-  @Column({ name: 'after_photos', type: 'text', array: true, nullable: true })
+  @Column({ name: 'after_photos', type: 'json', nullable: true })
   afterPhotos?: string[];
 
   @Column({ name: 'created_by' })

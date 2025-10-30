@@ -64,7 +64,7 @@ export class AuditLog {
   @Column({ name: 'target_resource_type', nullable: true })
   targetResourceType?: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   details?: Record<string, any>;
 
   @Column({ name: 'ip_address' })
